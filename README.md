@@ -1,1 +1,3 @@
-# httpproxy-validation-controller
+# httpproxy-validation
+
+Kubernetes Admissions controller for validating Contour HTTPProxy resources.

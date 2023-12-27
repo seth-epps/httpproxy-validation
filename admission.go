@@ -87,7 +87,7 @@ func (ah *HTTPProxyAdmissionHandler) Validate(review *admissionv1.AdmissionRevie
 			Status:  metav1.StatusFailure,
 			Code:    http.StatusBadRequest,
 			Reason:  metav1.StatusReasonBadRequest,
-			Message: fmt.Sprintf("Review is not for HTTPProxy resource. Instead go %s with name %s", review.Request.Kind.String(), review.Request.Name),
+			Message: fmt.Sprintf("Review is not for HTTPProxy resource. Instead got %s with name %s", review.Request.Kind.String(), review.Request.Name),
 		}
 		return
 	}

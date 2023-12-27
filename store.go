@@ -14,7 +14,7 @@ type Store interface {
 }
 
 type ClusterStore struct {
-	client *kubernetes.Clientset
+	client rest.Interface
 }
 
 func NewInClusterStore() (*ClusterStore, error) {
@@ -31,14 +31,15 @@ func NewClusterStore(config *rest.Config) (*ClusterStore, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &ClusterStore{clientset}, nil
+
+	restClient := clientset.RESTClient()
+	return &ClusterStore{restClient}, nil
 }
 
 func (cs *ClusterStore) ListHTTPProxies() ([]contourv1.HTTPProxy, error) {
 	var proxyList contourv1.HTTPProxyList
 
 	err := cs.client.
-		RESTClient().
 		Get().
 		AbsPath("/apis/projectcontour.io/v1/httpproxies").
 		Do(context.TODO()).
@@ -47,5 +48,6 @@ func (cs *ClusterStore) ListHTTPProxies() ([]contourv1.HTTPProxy, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return proxyList.Items, nil
 }

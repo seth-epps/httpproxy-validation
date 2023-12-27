@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log/slog"
 	"slices"
 
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -33,7 +32,7 @@ func (v Validator) IsValidProxy(proxy contourv1.HTTPProxy) (ValidationResponse, 
 	if err != nil {
 		return ValidationResponse{
 			Valid:  false,
-			Reason: "could not list resources in cluster",
+			Reason: "could not list resources",
 		}, err
 	}
 
@@ -51,7 +50,6 @@ func (v Validator) IsValidProxy(proxy contourv1.HTTPProxy) (ValidationResponse, 
 	}
 
 	if len(conflictingProxies) > 0 {
-		slog.Info("CONFLICT!!!", "conflicts", conflictingProxies)
 		return ValidationResponse{
 			Valid:  false,
 			Reason: fmt.Sprintf("%s is in conflict with %v", proxy.Name, conflictingProxies),

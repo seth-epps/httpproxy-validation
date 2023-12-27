@@ -2,16 +2,25 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
 	"strings"
 )
 
+type serverConfig struct {
+	tlsKeyPath  string
+	tlsCertPath string
+	port        int
+}
+
 func main() {
-	var tlsKey, tlsCert, ingressClasses string
-	flag.StringVar(&tlsKey, "tls-key", "/etc/certs/tls.key", "Path to the TLS key")
-	flag.StringVar(&tlsCert, "tls-cert", "/etc/certs/tls.crt", "Path to the TLS certificate")
+	var server serverConfig
+	var ingressClasses string
+	flag.StringVar(&server.tlsKeyPath, "tls-key", "/etc/certs/tls.key", "Path to the TLS key")
+	flag.StringVar(&server.tlsCertPath, "tls-cert", "/etc/certs/tls.crt", "Path to the TLS certificate")
+	flag.IntVar(&server.port, "port", 8443, "Server port")
 	flag.StringVar(&ingressClasses, "ingress-classes", "", "Comma separated list of ingress class names to validate against")
 	flag.Parse()
 
@@ -26,14 +35,22 @@ func main() {
 		TargetIngressClasses: strings.Split(ingressClasses, ","),
 	}
 
-	admissionHandler := HTTPProxyAdmissionHandler{
-		Validator: httpProxyValidator,
-	}
-
-	http.Handle("/validate", AdmissionMiddleware(admissionHandler.Validate))
-	slog.Info("Server starting...")
-	if err := http.ListenAndServeTLS(":8443", tlsCert, tlsKey, nil); err != nil {
+	if err := run(server, httpProxyValidator); err != nil {
 		slog.Error("Server exited.", "error", err.Error())
 		os.Exit(1)
 	}
+}
+
+func run(serverConfig serverConfig, validator Validator) error {
+	admissionHandler := HTTPProxyAdmissionHandler{
+		Validator: validator,
+	}
+
+	mux := http.NewServeMux()
+	mux.Handle("/validate", AdmissionMiddleware(admissionHandler.Validate))
+
+	addr := fmt.Sprintf(":%d", serverConfig.port)
+	slog.Info("Server starting", "addr", addr)
+
+	return http.ListenAndServeTLS(addr, serverConfig.tlsCertPath, serverConfig.tlsKeyPath, mux)
 }
